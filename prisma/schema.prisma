@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// One row per calendar day: Garmin daily summary + overnight HRV summary.
+model DailyMetric {
+  date              String   @id // YYYY-MM-DD (local calendar date)
+  restingHr         Int?
+  minHr             Int?
+  maxHr             Int?
+  avgStress         Int?
+  maxStress         Int?
+  bbCharged         Int?
+  bbDrained         Int?
+  bbHigh            Int?
+  bbLow             Int?
+  steps             Int?
+  distanceM         Float?
+  floors            Float?
+  intensityModerate Int?
+  intensityVigorous Int?
+  activeKcal        Float?
+  restingKcal       Float?
+  totalKcal         Float?
+  spo2Avg           Float?
+  respirationAvg    Float?
+  hydrationMl       Float?
+  hrvLastNight      Float?
+  hrvWeeklyAvg      Float?
+  hrvBaselineLow    Float?
+  hrvBaselineHigh   Float?
+  hrvStatus         String?
+  stressRestSec     Int?
+  stressLowSec      Int?
+  stressMedSec      Int?
+  stressHighSec     Int?
+  stepGoal          Int?
+  intensityGoal     Int? // weekly intensity-minute target
+  bbEvents          String? // JSON [{type, startLocal, impact, durationSec, feedback}]
+  raw               String? // original daily-summary JSON, kept so fields can be re-mapped without refetching
+  updatedAt         DateTime @updatedAt
+}
+
+model Sleep {
+  date           String    @id // the morning the sleep ended
+  totalSec       Int?
+  deepSec        Int?
+  lightSec       Int?
+  remSec         Int?
+  awakeSec       Int?
+  napSec         Int?
+  score          Int?
+  avgStress      Float?
+  avgHr          Float?
+  avgRespiration Float?
+  awakeCount     Int?
+  startGmt       DateTime?
+  endGmt         DateTime?
+  feedback       String?
+  needMin        Int? // Garmin's sleep need for this night (minutes)
+  needBaselineMin Int?
+  bedtimeMin     Int? // local clock minutes after midnight (0–1439)
+  wakeMin        Int?
+  scoreParts     String? // JSON { duration, stress, awakeCount, rem, light, deep, restlessness } qualifiers
+  raw            String?
+  updatedAt      DateTime  @updatedAt
+}
+
+/// Overnight time series for one night (fetched lazily, one night at a time).
+model NightSeries {
+  date      String   @id
+  hr        String? // JSON [[epochMs, bpm], ...] inside the sleep window
+  hrv       String? // JSON [[epochMs, ms], ...] 5-minute HRV readings
+  dayHr     String? // JSON [[epochMs, bpm], ...] full calendar day
+  updatedAt DateTime @updatedAt
+}
+
+model Activity {
+  id            String          @id // Garmin activityId
+  name          String
+  type          String
+  startLocal    String // "YYYY-MM-DD HH:mm:ss"
+  startGmt      DateTime
+  distanceM     Float?
+  durationSec   Float?
+  movingSec     Float?
+  elevationGain Float?
+  avgSpeed      Float? // m/s
+  maxSpeed      Float? // m/s
+  avgHr         Float?
+  maxHr         Float?
+  calories      Float?
+  aerobicTe     Float?
+  anaerobicTe   Float?
+  teLabel       String?
+  trainingLoad  Float?
+  avgPower      Float?
+  normPower     Float?
+  avgCadence    Float?
+  vo2max        Float?
+  z1Sec         Float?
+  z2Sec         Float?
+  z3Sec         Float?
+  z4Sec         Float?
+  z5Sec         Float?
+  locationName  String?
+  gctMs         Float? // ground contact time
+  vertOscCm     Float?
+  strideCm      Float?
+  vertRatio     Float?
+  gapSpeed      Float? // grade-adjusted speed, m/s
+  best1kSec     Float?
+  bestMileSec   Float?
+  best5kSec     Float?
+  isPr          Boolean?
+  bbImpact      Int? // Body Battery change caused by the activity
+  sets          String? // JSON strength summary [{category, sub, sets, reps, durationSec, maxWeightKg}]
+  raw           String?
+  fitStatus     String          @default("pending") // pending | ok | none | error
+  laps          ActivityLap[]
+  stream        ActivityStream?
+  updatedAt     DateTime        @updatedAt
+
+  @@index([startLocal])
+  @@index([type])
+}
+
+model ActivityLap {
+  id            Int      @id @default(autoincrement())
+  activityId    String
+  index         Int
+  distanceM     Float?
+  durationSec   Float?
+  avgSpeed      Float?
+  maxSpeed      Float?
+  avgHr         Float?
+  maxHr         Float?
+  avgPower      Float?
+  avgCadence    Float?
+  elevationGain Float?
+  activity      Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, index])
+}
+
+/// Downsampled per-record time series parsed from the activity's .FIT file.
+model ActivityStream {
+  activityId String   @id
+  points     String // JSON { t:[sec], hr:[], speed:[], cadence:[], power:[], alt:[], lat:[], lng:[] }
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+}
+
+model BodyComposition {
+  date        String @id
+  weightKg    Float?
+  bmi         Float?
+  bodyFatPct  Float?
+  bodyWaterPct Float?
+  muscleMassKg Float?
+}
+
+model FitnessAge {
+  date             String @id
+  chronologicalAge Int?
+  fitnessAge       Float?
+  components       String? // JSON as returned by Garmin
+}
+
+/// Account-level settings pulled from Garmin (single row).
+model Profile {
+  id                Int     @id @default(1)
+  measurementSystem String? // metric | statute_us | statute_uk
+  hrZones           String? // JSON as returned by /biometric-service/heartRateZones/v2
+  backfillCursor    String? // oldest date the history backfill has reached; lets an interrupted first sync resume
+  backfillDone      Boolean @default(false)
+  cycle             String? // JSON menstrual-cycle summary for today, when the account tracks it
+  raw               String?
+}
+
+/// Cached 24h bearer token (single row).
+model AuthToken {
+  id          Int      @id @default(1)
+  accessToken String
+  expiresAt   DateTime
+}
+
+model SyncLog {
+  id         Int       @id @default(autoincrement())
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  status     String    @default("running") // running | ok | error
+  message    String?
+  requests   Int       @default(0)
+}
