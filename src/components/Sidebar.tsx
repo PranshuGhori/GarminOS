@@ -21,7 +21,7 @@ export function Sidebar() {
     <>
       <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-line bg-surface px-3 py-5 md:flex">
         <div className="mb-7 flex items-center gap-2 px-2 text-[15px] font-semibold">
-          <Watch className="h-5 w-5 text-s1" /> Garmin Dashboard
+          <Watch className="h-5 w-5 text-s1" /> GarminOS
         </div>
         <nav className="flex flex-col gap-1">
           {NAV.map(({ href, label, icon: Icon }) => {

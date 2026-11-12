@@ -8,7 +8,7 @@ import { IS_MOCK } from '@/lib/db';
 import { ProfileProvider } from '@/components/ProfileContext';
 import { loadProfile } from '@/lib/profile';
 
-export const metadata: Metadata = { title: 'Garmin Dashboard', description: 'Personal health & fitness dashboard' };
+export const metadata: Metadata = { title: 'GarminOS', description: 'Personal health & fitness dashboard' };
 export const dynamic = 'force-dynamic';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

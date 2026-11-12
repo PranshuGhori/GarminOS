@@ -4,13 +4,15 @@ A local, dark-mode health and fitness dashboard on top of the **Garmin Connect P
 Data is synced into a SQLite file on this machine, so pages load instantly and history is kept even
 if Garmin later drops it.
 
-![Overview](docs/overview.png)
+[![CI](https://github.com/PranshuGhori/GarminOS/actions/workflows/ci.yml/badge.svg)](https://github.com/PranshuGhori/GarminOS/actions/workflows/ci.yml)
+
+![GarminOS tour: overview, coach, sleep, activities, trends and explorer](docs/tour.gif)
 
 | Coach | Sleep | Trends |
 |---|---|---|
 | ![Coach](docs/coach.png) | ![Sleep](docs/sleep.png) | ![Trends](docs/trends.png) |
 
-Screenshots show generated demo data.
+Everything shown is generated demo data.
 
 > **Unofficial project.** Not affiliated with or endorsed by Garmin. Garmin, Garmin Connect and Body Battery are
 > trademarks of Garmin Ltd. You use your own Personal API key to read your own data, under the terms you accepted
@@ -34,6 +36,17 @@ Create the key at <https://connect.garmin.com/app/settings/personalApiToken>. Ke
 The database is created automatically on first start. The first sync reaches back up to two years and takes a
 few minutes; if it is interrupted it resumes from where it stopped on the next sync. To watch progress, run
 `npm run sync` in a terminal instead of using the button.
+
+### Or with Docker
+
+```bash
+git clone https://github.com/PranshuGhori/GarminOS.git && cd GarminOS
+cp .env.example .env     # paste your key
+docker compose up -d     # http://localhost:3000
+```
+
+Your data is kept in the `garminos-data` volume and survives upgrades (`git pull && docker compose up -d --build`).
+The port is published on `127.0.0.1` only. To try it with demo data and no key: `GARMIN_MOCK=1 docker compose up -d`.
 
 ### Demo data (no key needed)
 
