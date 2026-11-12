@@ -1,4 +1,4 @@
-# Garmin Dashboard
+# GarminOS
 
 A local, dark-mode health and fitness dashboard on top of the **Garmin Connect Personal API**.
 Data is synced into a SQLite file on this machine, so pages load instantly and history is kept even
@@ -22,7 +22,7 @@ Screenshots show generated demo data.
 Requires Node.js 22 or newer. Works on macOS, Linux and Windows.
 
 ```bash
-git clone <this repo> && cd garmin-dashboard
+git clone https://github.com/PranshuGhori/GarminOS.git && cd GarminOS
 npm install
 cp .env.example .env     # Windows: copy .env.example .env   — then paste your key into .env
 npm run dev              # http://localhost:3000, then press "Sync Now"
